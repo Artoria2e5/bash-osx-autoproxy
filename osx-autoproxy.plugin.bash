@@ -2,6 +2,7 @@
 # Auto configure bash proxy env based on system preferences
 # Sukka (https://skk.moe)
 # Artoria2e5 (bash 3 translation)
+__OSX_AUTOPROXY_SELF=${BASH_SOURCE[0]}
 
 # bash 3 compat. dumbass version of a declare -A
 # and we don't have declare -n, great
@@ -65,3 +66,6 @@ elif __osx_autoproxy_has HTTPString; then
     export ALL_PROXY="${all_proxy}"
 fi
 
+__osx_autoproxy_reload() {
+    source $__OSX_AUTOPROXY_SELF
+}
