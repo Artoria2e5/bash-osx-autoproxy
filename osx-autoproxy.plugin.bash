@@ -12,26 +12,25 @@ __osx_autoproxy_set() {
     eval "__OSX_AUTOPROXY_DICT_$key=$val"
 }
 __osx_autoproxy_get() {
-    eval "printf '%s\n' __OSX_AUTOPROXY_DICT_$1"
+    eval "printf '%s\n' \$__OSX_AUTOPROXY_DICT_$1"
 }
 __osx_autoproxy_has () {
     # forgive my debts 
-    eval "[ -n ${__OSX_AUTOPROXY_DICT_$1+x} ]"
+    eval "[ -n \${__OSX_AUTOPROXY_DICT_$1+x} ]"
 }
 
 
 # Parse the output of scutil --proxy
-__OSX_AUTOPROXY_SCUTIL_PROXY=$(scutil --proxy)
-while read -r field sep value <<< "$__OSX_AUTOPROXY_SCUTIL_PROXY"; do
-    if [[ sep != : ]]; then continue; fi
-    __osx_autoproxy_set field value
-done
+while read -r __osx_autoproxy_field __osx_autoproxy_sep __osx_autoproxy_value; do
+    if [[ $__osx_autoproxy_sep != : ]]; then continue; fi
+    __osx_autoproxy_set "$__osx_autoproxy_field" "$__osx_autoproxy_value"
+done < <(scutil --proxy)
 
 # yeah why not
 for proto in HTTP HTTPS FTPS SOCKS; do
-    if (( $(__osx_autoproxy_get ${proto}Enabled) )); then
-        __osx_autoproxy_set
-            '${proto}String'
+    if (( $(__osx_autoproxy_get ${proto}Enable) )); then
+        __osx_autoproxy_set \
+            "${proto}String" \
             "$(__osx_autoproxy_get ${proto}Proxy):$(__osx_autoproxy_get ${proto}Port)"
     fi
 done
@@ -40,13 +39,13 @@ done
 __osx_autoproxy_export() {
     local to_export=$1 value=$2
     unset $to_export
-    eval "to_export=$(printf %q "$2")"
+    eval "$to_export=$(printf %q "$2")"
     export $to_export
 }
 __osx_autoproxy_assign() {
     local key=$1 to_export
     shift
-    if !__osx_autoproxy_has $key; then return; fi
+    if ! __osx_autoproxy_has $key; then return; fi
     local val="$(__osx_autoproxy_get $key)"
     for to_export; do
         __osx_autoproxy_export $to_export "$val"
